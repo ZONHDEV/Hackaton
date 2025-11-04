@@ -1,0 +1,28 @@
+SOURCES DES 300 DOCUMENTS AGRICOLES BURKINABÈ
+============================================================
+
+Date de collecte: 2025-11-04 12:23:55
+Nombre total de documents: 310
+Nombre de sources uniques: 17
+Sources vérifiées: 17
+Sources PDF: 6
+
+SOURCES VÉRIFIÉES:
+--------------------
+1. ✓ https://www.cgiar.org/news-events/news/600-small-scale-tree-nurseries-in-burkina-faso-hold-large-diversity/
+2. ✓ https://extranet.who.int/nutrition/gina/sites/default/filesstore/BFA%202021%20Strat%C3%A9gie%20nationale%20de%20d%C3%A9veloppement%20de%20l%27agriculture%202021-2025.pdf
+3. ✓ https://cgspace.cgiar.org/items/4fdf592e-f842-4d70-bb1b-8d6347168818
+4. ✓ https://www.fao.org/3/a-i5188e.pdf
+5. ✓ https://link.springer.com/rwe/10.1007/978-3-030-57281-5_327
+6. ✓ https://jgiass.com/pdf-reader.php?file=Impact-of-climate-change-on-agricultural-production-in-Burkina-Faso,-West-Africa.pdf&path=issue_papers
+7. ✓ https://www.coraf.org/techniques-agricoles-durables-afrique-ouest/
+8. ✓ https://www.fao.org/4/x5158f/x5158f0q.htm
+9. ✓ https://link.springer.com/article/10.1007/s10460-023-10484-w
+10. ✓ https://www.iwmi.cgiar.org/publications/iwmi-working-papers/iwmi-working-paper-163/
+11. ✓ https://www.fao.org/countryprofiles/index/fr/?iso3=BFA
+12. ✓ https://ideas.repec.org/p/eca/wpaper/2013-350821.html
+13. ✓ https://www.academia.edu/3762864
+14. ✓ https://www.fao.org/3/ca7343fr/CA7343FR.pdf
+15. ✓ https://www.fao.org/3/y5144f/y5144f08.pdf
+16. ✓ https://www.worldbank.org/en/country/burkinafaso
+17. ✓ https://www.nitidae.org/files/db0aced8/3_sesame_web.pdf
