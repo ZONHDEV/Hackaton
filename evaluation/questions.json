@@ -1,0 +1,37 @@
+[
+  {
+    "id": "q001",
+    "question": "Quelles sont les étapes de transformation traditionnelle du karité ?",
+    "expected_answer": "Les étapes incluent la collecte des noix, le dépulpage, le lavage, le séchage, le concassage, la torréfaction, le broyage, le malaxage et la filtration pour obtenir le beurre de karité.",
+    "category": "transformation",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q002", 
+    "question": "Quand planter le mil au Burkina Faso ?",
+    "expected_answer": "La plantation du mil se fait avec les premières pluies, généralement entre les mois de mai et juin.",
+    "category": "calendrier_agricole",
+    "difficulty": "easy"
+  },
+  {
+    "id": "q003",
+    "question": "Quelles sont les principales zones de production cotonnière au Burkina ?",
+    "expected_answer": "Les principales zones de production sont les régions des Hauts-Bassins, de la Boucle du Mouhoun et des Cascades.",
+    "category": "production",
+    "difficulty": "medium"
+  },
+  {
+    "id": "q004",
+    "question": "Quelles techniques de conservation des eaux sont utilisées dans les zones sahéliennes ?",
+    "expected_answer": "Les techniques traditionnelles comme le zaï et les demi-lunes sont utilisées pour la conservation des eaux et des sols.",
+    "category": "techniques",
+    "difficulty": "hard"
+  },
+  {
+    "id": "q005",
+    "question": "Quelles sont les variétés locales de mil cultivées au Burkina ?",
+    "expected_answer": "Les variétés locales comme 'Souna' et 'Sanio' sont reconnues pour leur résistance à la sécheresse.",
+    "category": "varietes",
+    "difficulty": "medium"
+  }
+]
