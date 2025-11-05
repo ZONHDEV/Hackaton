@@ -1,6 +1,6 @@
 """
-Interface Streamlit pour Agri-Assistant
-Licence: MIT
+Interface Streamlit pour le RAG Agriculture Burkinabè
+Frontend optimisé pour CPU 8Go
 """
 
 import streamlit as st
@@ -9,290 +9,547 @@ import json
 from datetime import datetime
 import time
 
-# Configuration de la page
+# ============================================
+# CONFIGURATION DE LA PAGE
+# ============================================
+
 st.set_page_config(
-    page_title="Agri Assistant Burkina",
-    page_icon="🌱",
+    page_title="AgriIA - Assistant Agriculture",
+    page_icon="🌾",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# CSS personnalisé
+# ============================================
+# CONSTANTES
+# ============================================
+
+API_URL = "http://localhost:8000"
+
+# ============================================
+# STYLES CSS
+# ============================================
+
 st.markdown("""
-<style>
-    .main-header {
-        background: linear-gradient(135deg, #2E8B57, #3CB371);
-        color: white;
+    <style>
+    /* Style général */
+    .main {
         padding: 2rem;
-        border-radius: 10px;
-        text-align: center;
-        margin-bottom: 2rem;
     }
-    .answer-box {
-        background-color: #f8fff8;
-        border-left: 4px solid #2E8B57;
-        padding: 1.5rem;
+    
+    /* Boutons */
+    .stButton>button {
+        width: 100%;
+        background-color: #4CAF50;
+        color: white;
+        border-radius: 5px;
+        padding: 0.5rem;
+        font-size: 16px;
+        font-weight: 500;
+        border: none;
+        transition: all 0.3s;
+    }
+    
+    .stButton>button:hover {
+        background-color: #45a049;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    /* Boxes de contenu */
+    .source-box {
+        background-color: #f0f2f6;
+        padding: 1rem;
         border-radius: 8px;
+        margin: 0.5rem 0;
+        border-left: 4px solid #4CAF50;
+    }
+    
+    .answer-box {
+        background-color: #e8f5e9;
+        padding: 1.5rem;
+        border-radius: 10px;
         margin: 1rem 0;
+        border-left: 5px solid #4CAF50;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
-    .source-item {
-        background-color: #f0f8f0;
-        padding: 1rem;
-        margin: 0.5rem 0;
-        border-radius: 6px;
-        border: 1px solid #e0e8e0;
-    }
-    .document-card {
-        background: white;
-        padding: 1rem;
-        margin: 0.5rem 0;
-        border-radius: 8px;
-        border: 1px solid #e0e0e0;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    .metric-box {
-        background: white;
+    
+    .error-box {
+        background-color: #ffebee;
         padding: 1rem;
         border-radius: 8px;
-        border: 1px solid #e0e0e0;
-        text-align: center;
+        margin: 1rem 0;
+        border-left: 5px solid #f44336;
     }
-    .stButton button {
-        background-color: #2E8B57;
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 5px;
-        cursor: pointer;
+    
+    .warning-box {
+        background-color: #fff3e0;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 1rem 0;
+        border-left: 5px solid #ff9800;
     }
-    .stButton button:hover {
-        background-color: #3CB371;
+    
+    .info-box {
+        background-color: #e3f2fd;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 1rem 0;
+        border-left: 5px solid #2196F3;
     }
-</style>
+    
+    .success-box {
+        background-color: #e8f5e9;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 1rem 0;
+        border-left: 5px solid #4CAF50;
+    }
+    
+    /* Status indicators */
+    .status-connected {
+        color: #4CAF50;
+        font-weight: bold;
+    }
+    
+    .status-disconnected {
+        color: #f44336;
+        font-weight: bold;
+    }
+    </style>
 """, unsafe_allow_html=True)
 
-class AgriAssistantFrontend:
-    def __init__(self, api_url="http://localhost:8000"):
-        self.api_url = api_url
-        self.session = requests.Session()
-    
-    def check_health(self):
-        """Vérifie si l'API est disponible - CORRIGÉ"""
-        try:
-            response = self.session.get(f"{self.api_url}/health", timeout=5)
-            return response.status_code == 200, response.json() if response.status_code == 200 else None
-        except Exception as e:
-            return False, {"error": str(e)}
-    
-    def ask_question(self, question, k=3):
-        """Envoie une question à l'API - CORRIGÉ"""
-        try:
-            response = self.session.post(
-                f"{self.api_url}/ask",
-                json={"question": question, "k": k},
-                timeout=200
-            )
-            if response.status_code == 200:
-                return True, response.json()
-            else:
-                return False, {"error": f"HTTP {response.status_code}: {response.text}"}
-        except Exception as e:
-            return False, {"error": str(e)}
-    
-    def get_system_info(self):
-        """Récupère les informations du système - CORRIGÉ"""
-        try:
-            response = self.session.get(f"{self.api_url}/", timeout=5)
-            return response.status_code == 200, response.json() if response.status_code == 200 else None
-        except Exception as e:
-            return False, {"error": str(e)}
+# ============================================
+# FONCTIONS API
+# ============================================
 
-def main():
-    # Initialisation du frontend
-    assistant = AgriAssistantFrontend()
+def check_api_health():
+    """Vérifie si l'API est accessible et retourne son état"""
+    try:
+        response = requests.get(f"{API_URL}/health", timeout=5)
+        if response.status_code == 200:
+            return True, response.json()
+        else:
+            return False, None
+    except requests.exceptions.RequestException as e:
+        return False, str(e)
+
+def initialize_system(corpus_path="data/corpus.json"):
+    """Initialise le système RAG avec le corpus"""
+    try:
+        response = requests.post(
+            f"{API_URL}/initialize",
+            json={"corpus_path": corpus_path},
+            timeout=240  # 4 minutes pour l'initialisation
+        )
+        if response.status_code == 200:
+            return True, response.json()
+        else:
+            error_msg = f"Erreur {response.status_code}"
+            try:
+                error_data = response.json()
+                error_msg = error_data.get("detail", error_msg)
+            except:
+                error_msg = response.text
+            return False, {"message": error_msg}
+    except requests.exceptions.Timeout:
+        return False, {"message": "Timeout: L'initialisation prend trop de temps (>120s). Vérifiez les logs du backend."}
+    except requests.exceptions.RequestException as e:
+        return False, {"message": f"Erreur de connexion: {str(e)}"}
+
+def ask_question(question, k=2):
+    """Pose une question au système RAG"""
+    try:
+        response = requests.post(
+            f"{API_URL}/ask",
+            json={"question": question, "k": k},
+            timeout=240  # 4 minutes pour la génération
+        )
+        
+        if response.status_code == 200:
+            return True, response.json()
+        else:
+            error_detail = "Erreur inconnue"
+            try:
+                error_json = response.json()
+                error_detail = error_json.get("detail", error_detail)
+            except:
+                error_detail = response.text
+            return False, {"answer": f"Erreur {response.status_code}: {error_detail}"}
+            
+    except requests.exceptions.Timeout:
+        return False, {"answer": "⏱️ Timeout: La génération prend trop de temps. Le modèle est peut-être en train de se charger pour la première fois."}
+    except requests.exceptions.RequestException as e:
+        return False, {"answer": f"❌ Erreur de connexion: {str(e)}"}
+
+def get_system_info():
+    """Récupère les informations du système"""
+    try:
+        response = requests.get(f"{API_URL}/system/info", timeout=5)
+        if response.status_code == 200:
+            return True, response.json()
+        else:
+            return False, None
+    except requests.exceptions.RequestException:
+        return False, None
+
+def get_corpus_stats():
+    """Récupère les statistiques du corpus"""
+    try:
+        response = requests.get(f"{API_URL}/corpus/stats", timeout=5)
+        if response.status_code == 200:
+            return True, response.json()
+        else:
+            return False, None
+    except requests.exceptions.RequestException:
+        return False, None
+
+# ============================================
+# INITIALISATION SESSION STATE
+# ============================================
+
+if 'initialized' not in st.session_state:
+    st.session_state.initialized = False
+
+if 'chat_history' not in st.session_state:
+    st.session_state.chat_history = []
+
+if 'api_connected' not in st.session_state:
+    st.session_state.api_connected = False
+
+if 'first_question' not in st.session_state:
+    st.session_state.first_question = True
+
+# ============================================
+# EN-TÊTE
+# ============================================
+
+st.title("🌾 AgriIA - Assistant Agriculture Burkinabè")
+st.markdown("*Système RAG intelligent pour l'agriculture au Burkina Faso*")
+st.divider()
+
+# ============================================
+# SIDEBAR - CONFIGURATION
+# ============================================
+
+with st.sidebar:
+    st.header("⚙️ Configuration")
     
-    # En-tête principale
+    # === SECTION 1: État de l'API ===
+    st.subheader("📡 Connexion API")
+    
+    if st.button("🔄 Vérifier la connexion", use_container_width=True):
+        with st.spinner("Vérification..."):
+            api_ok, health_data = check_api_health()
+            
+            if api_ok:
+                st.session_state.api_connected = True
+                st.success("✅ API connectée")
+                
+                if health_data and health_data.get("system_initialized", False):
+                    st.session_state.initialized = True
+                    corpus_size = health_data.get('corpus_size', 0)
+                    st.info(f"📚 {corpus_size} documents chargés")
+                else:
+                    st.session_state.initialized = False
+                    st.warning("⚠️ Système non initialisé")
+            else:
+                st.session_state.api_connected = False
+                st.error("❌ API non accessible")
+                if health_data:
+                    st.caption(f"Détails: {health_data}")
+    
+    # Affichage du statut
+    status_html = ""
+    if st.session_state.api_connected:
+        status_html = '<p class="status-connected">🟢 Connecté</p>'
+    else:
+        status_html = '<p class="status-disconnected">🔴 Déconnecté</p>'
+    st.markdown(status_html, unsafe_allow_html=True)
+    
+    st.divider()
+    
+    # === SECTION 2: Initialisation ===
+    st.subheader("🚀 Initialisation")
+    
+    corpus_path = st.text_input(
+        "Chemin du corpus",
+        value="data/corpus.json",
+        help="Chemin relatif vers le fichier corpus.json depuis le dossier backend"
+    )
+    
+    if st.button("📂 Initialiser le système", use_container_width=True):
+        if not st.session_state.api_connected:
+            st.error("❌ Connectez d'abord l'API")
+        else:
+            with st.spinner("⏳ Initialisation en cours (30-90 secondes)..."):
+                progress_bar = st.progress(0)
+                status_text = st.empty()
+                
+                status_text.text("📚 Chargement du corpus...")
+                progress_bar.progress(25)
+                time.sleep(0.5)
+                
+                status_text.text("🔤 Chargement des embeddings...")
+                progress_bar.progress(50)
+                
+                success, result = initialize_system(corpus_path)
+                
+                progress_bar.progress(100)
+                status_text.empty()
+                progress_bar.empty()
+                
+                if success:
+                    status = result.get("status", "unknown")
+                    message = result.get("message", "")
+                    corpus_size = result.get("corpus_size", 0)
+                    note = result.get("note", "")
+                    
+                    if status == "success":
+                        st.session_state.initialized = True
+                        st.success(f"✅ {message}")
+                        st.info(f"📚 {corpus_size} documents")
+                        if note:
+                            st.caption(f"💡 {note}")
+                    elif status == "warning":
+                        st.warning(f"⚠️ {message}")
+                    else:
+                        st.error(f"❌ {message}")
+                else:
+                    st.error("❌ Échec")
+                    st.error(result.get("message", "Erreur inconnue"))
+    
+    # Statut d'initialisation
+    if st.session_state.initialized:
+        st.success("✅ Système prêt")
+    else:
+        st.warning("⚠️ Non initialisé")
+    
+    st.divider()
+    
+    # === SECTION 3: Paramètres ===
+    st.subheader("🔍 Paramètres")
+    
+    num_docs = st.slider(
+        "Documents à récupérer",
+        min_value=1,
+        max_value=5,
+        value=2,
+        help="Nombre de documents pertinents pour le contexte"
+    )
+    
+    st.divider()
+    
+    # === SECTION 4: Actions ===
+    st.subheader("🔧 Actions")
+    
+    if st.button("📋 Infos système", use_container_width=True):
+        if st.session_state.api_connected:
+            success, info = get_system_info()
+            if success:
+                st.json(info)
+            else:
+                st.error("❌ Impossible de récupérer les infos")
+        else:
+            st.error("❌ API non connectée")
+    
+    if st.button("🗑️ Effacer l'historique", use_container_width=True):
+        st.session_state.chat_history = []
+        st.rerun()
+    
+    st.divider()
+    
+    # === SECTION 5: Informations ===
+    st.caption("💻 Optimisé pour CPU 8Go")
+    st.caption("🤖 facebook/opt-350m")
+    st.caption("📦 MiniLM-L12-v2")
+    st.caption("⚡ Version 1.0.0")
+
+# ============================================
+# CORPS PRINCIPAL
+# ============================================
+
+st.header("💬 Posez votre question")
+
+# Vérifications préalables
+if not st.session_state.api_connected:
     st.markdown("""
-    <div class="main-header">
-        <h1>🌱 Agri Assistant Burkina</h1>
-        <h3>Votre assistant IA 100% Open Source pour l'agriculture burkinabè</h3>
+    <div class="warning-box">
+        <h4>⚠️ API non connectée</h4>
+        <p>Veuillez d'abord vérifier la connexion à l'API.</p>
+        <p><b>Étapes :</b></p>
+        <ol>
+            <li>Démarrez le backend : <code>python app.py</code></li>
+            <li>Cliquez sur "🔄 Vérifier la connexion"</li>
+        </ol>
     </div>
     """, unsafe_allow_html=True)
+
+elif not st.session_state.initialized:
+    st.markdown("""
+    <div class="info-box">
+        <h4>📂 Système non initialisé</h4>
+        <p>Le système doit être initialisé avant utilisation.</p>
+        <p><b>Étapes :</b></p>
+        <ol>
+            <li>Vérifiez que <code>data/corpus.json</code> existe</li>
+            <li>Cliquez sur "📂 Initialiser le système"</li>
+            <li>Attendez 30-90 secondes</li>
+        </ol>
+    </div>
+    """, unsafe_allow_html=True)
+
+else:
+    # === AFFICHAGE DE L'HISTORIQUE ===
+    if st.session_state.chat_history:
+        st.subheader("📜 Historique")
+        
+        for i, entry in enumerate(st.session_state.chat_history):
+            question_preview = entry['question'][:60]
+            is_last = (i == len(st.session_state.chat_history) - 1)
+            
+            with st.expander(f"💬 {question_preview}...", expanded=is_last):
+                st.markdown(f"**Question :** {entry['question']}")
+                
+                if entry['status'] == 'success':
+                    answer_html = f"""
+                    <div class="answer-box">
+                        <h4>🤖 Réponse</h4>
+                        <p>{entry['answer']}</p>
+                    </div>
+                    """
+                    st.markdown(answer_html, unsafe_allow_html=True)
+                    
+                    if entry.get('relevant_documents'):
+                        st.markdown("**📚 Documents sources**")
+                        for doc in entry['relevant_documents']:
+                            titre = doc.get('titre', 'Sans titre')
+                            score = doc.get('score', 0)
+                            extrait = doc.get('extrait', '')
+                            source = doc.get('source', 'Non spécifiée')
+                            
+                            doc_html = f"""
+                            <div class="source-box">
+                                <b>{titre}</b><br>
+                                <small>Score: {score:.3f}</small><br>
+                                <i>{extrait}</i><br>
+                                <small>📎 {source}</small>
+                            </div>
+                            """
+                            st.markdown(doc_html, unsafe_allow_html=True)
+                    
+                    st.caption(f"⏱️ {entry.get('timestamp', '')}")
+                    
+                elif entry['status'] == 'warning':
+                    warning_html = f"""
+                    <div class="warning-box">
+                        <p>{entry['answer']}</p>
+                    </div>
+                    """
+                    st.markdown(warning_html, unsafe_allow_html=True)
+                    
+                else:
+                    error_html = f"""
+                    <div class="error-box">
+                        <p>{entry['answer']}</p>
+                    </div>
+                    """
+                    st.markdown(error_html, unsafe_allow_html=True)
+        
+        st.divider()
     
-    # Sidebar
-    with st.sidebar:
-        st.header("ℹ️ À Propos")
-        st.write("""
-        Cet assistant utilise exclusivement des technologies **open source** 
-        pour répondre à vos questions sur l'agriculture burkinabè.
-        
-        **Domaines couverts:**
-        🌿 Karité et transformation
-        🌾 Coton et filière
-        🌽 Mil et sorgho
-        💧 Techniques durables
-        📊 Marchés agricoles
-        """)
-        
-        # Vérification de la santé de l'API
-        st.header("🔍 Statut du Système")
-        health_ok, health_data = assistant.check_health()
-        
-        if health_ok:
-            st.success("✅ API Connectée")
-            if health_data:
-                st.metric("Documents chargés", health_data.get("corpus_size", 0))
-                st.metric("Système initialisé", "Oui" if health_data.get("initialized") else "Non")
-        else:
-            st.error("❌ API Non Connectée")
-            st.info("Vérifiez que le serveur backend est démarré sur http://localhost:8000")
-            if health_data and "error" in health_data:
-                st.error(f"Détail: {health_data['error']}")
-        
-        # Exemples de questions
-        st.header("💡 Exemples de Questions")
-        example_questions = [
-            "Quelles sont les étapes de transformation du karité ?",
-            "Comment cultiver le mil dans les zones arides ?",
-            "Quels sont les marchés pour le coton burkinabè ?",
-            "Techniques d'irrigation économiques au Burkina",
-            "Variétés de mil résistantes à la sécheresse",
-            "Comment produire du beurre de karité de qualité ?"
-        ]
-        
-        for q in example_questions:
-            if st.button(q, key=f"example_{q}"):
-                st.session_state.question_input = q
-        
-        # Paramètres de recherche
-        st.header("⚙️ Paramètres")
-        k_documents = st.slider("Nombre de documents à utiliser", 1, 5, 3)
-        
-        # Informations techniques
-        st.header("🔧 Technologies")
-        st.write("""
-        - **Embeddings:** sentence-transformers
-        - **Base vectorielle:** FAISS
-        - **Modèle de langage:** Mistral-7B
-        - **Interface:** Streamlit
-        - **API:** FastAPI
-        """)
+    # === NOUVELLE QUESTION ===
+    st.subheader("❓ Nouvelle question")
     
-    # Zone de question principale
+    # Note importante pour la première question
+    if st.session_state.first_question and not st.session_state.chat_history:
+        st.info("💡 **Note** : La première question peut prendre 60-90 secondes (chargement du modèle). Les suivantes seront plus rapides !")
+    
+    
+    
+    cols = st.columns(2)
+    
+    # Zone de saisie
+    question = st.text_area(
+        "Votre question :",
+        value=st.session_state.get('example_question', ''),
+        height=100,
+        placeholder="Ex: Comment cultiver le sorgho ?",
+        help="Posez une question claire sur l'agriculture"
+    )
+    
+    if 'example_question' in st.session_state:
+        del st.session_state.example_question
+    
+    # Boutons d'action
     col1, col2 = st.columns([3, 1])
     
     with col1:
-        question = st.text_input(
-            "💬 Posez votre question sur l'agriculture burkinabè:",
-            value=st.session_state.get('question_input', ''),
-            placeholder="Ex: Comment transformer le karité en beurre ?",
-            key="question_input_main"
-        )
+        ask_button = st.button("🚀 Poser la question", type="primary", use_container_width=True)
     
     with col2:
-        st.write("")  # Espacement
-        st.write("")
-        search_button = st.button("🔍 Rechercher", use_container_width=True)
+        clear_button = st.button("🗑️ Effacer", use_container_width=True)
     
     # Traitement de la question
-    if search_button and question:
-        with st.spinner("🔍 Recherche dans nos documents agricoles..."):
-            start_time = time.time()
-            success, response = assistant.ask_question(question, k_documents)
-            response_time = time.time() - start_time
+    if ask_button and question.strip():
+        # Estimation du temps
+        estimated_time = "60-90 secondes" if st.session_state.first_question else "10-30 secondes"
+        
+        with st.spinner(f"🔍 Traitement en cours (environ {estimated_time})..."):
+            progress_text = st.empty()
+            progress_bar = st.progress(0)
             
-            if success and response:
-                # Affichage de la réponse
-                st.markdown("### 📝 Réponse")
-                st.markdown(f'<div class="answer-box">{response.get("answer", "Aucune réponse générée")}</div>', unsafe_allow_html=True)
-                
-                # Métriques
-                col1, col2, col3 = st.columns(3)
-                with col1:
-                    st.metric("Temps de réponse", f"{response_time:.2f}s")
-                with col2:
-                    st.metric("Documents utilisés", response.get("context_used", 0))
-                with col3:
-                    st.metric("Taille du corpus", response.get("corpus_size", 0))
-                
-                # Sources utilisées
-                st.markdown("### 📚 Sources")
-                sources = response.get("sources", [])
-                if sources:
-                    for i, source in enumerate(sources):
-                        st.markdown(f'''
-                        <div class="source-item">
-                            <strong>Source {i+1}:</strong> {source}
-                        </div>
-                        ''', unsafe_allow_html=True)
-                else:
-                    st.info("Aucune source spécifique utilisée")
-                
-                # Documents pertinents
-                st.markdown("### 🔍 Documents Pertinents")
-                documents = response.get("relevant_documents", [])
-                if documents:
-                    for doc in documents:
-                        with st.expander(f"📄 {doc.get('title', 'Sans titre')} (Score: {doc.get('score', 0):.3f})"):
-                            st.write(f"**Source:** {doc.get('source', 'Non spécifié')}")
-                            st.write(f"**Rang:** {doc.get('rank', 'N/A')}")
-                else:
-                    st.info("Aucun document pertinent trouvé")
-                
-                # Données brutes (pour debug)
-                with st.expander("📊 Données techniques (Debug)"):
-                    st.json(response)
-                
+            progress_text.text("📚 Recherche des documents...")
+            progress_bar.progress(20)
+            time.sleep(0.3)
+            
+            progress_text.text("🤖 Génération de la réponse...")
+            progress_bar.progress(40)
+            
+            if st.session_state.first_question:
+                progress_text.text("⏳ Chargement du modèle (première fois)...")
+                progress_bar.progress(60)
+            
+            success, response = ask_question(question, k=num_docs)
+            
+            progress_bar.progress(100)
+            progress_text.empty()
+            progress_bar.empty()
+            
+            if success:
+                st.session_state.first_question = False
+                st.session_state.chat_history.append({
+                    'question': question,
+                    'answer': response.get('answer', ''),
+                    'status': response.get('status', 'unknown'),
+                    'relevant_documents': response.get('relevant_documents', []),
+                    'sources': response.get('sources', []),
+                    'timestamp': response.get('timestamp', '')
+                })
+                st.rerun()
             else:
-                st.error("❌ Erreur lors de la recherche de réponse")
-                if response and "error" in response:
-                    st.error(f"Erreur détaillée: {response['error']}")
+                error_msg = response.get('answer', 'Erreur inconnue')
+                st.error(f"❌ {error_msg}")
     
-    # Section d'information quand aucune recherche n'est en cours
-    elif not question:
-        st.markdown("---")
-        st.markdown("### 🎯 Comment utiliser Agri Assistant")
-        
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.markdown("""
-            <div class="metric-box">
-                <h3>🌍 100% Open Source</h3>
-                <p>Toutes les technologies utilisées sont open source et transparentes</p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col2:
-            st.markdown("""
-            <div class="metric-box">
-                <h3>🇧🇫 Contexte Local</h3>
-                <p>Spécialisé sur l'agriculture burkinabè avec des données locales</p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col3:
-            st.markdown("""
-            <div class="metric-box">
-                <h3>🔒 Souveraineté</h3>
-                <p>Pas de dépendance aux services cloud propriétaires</p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Statistiques si disponibles
-        if health_ok and health_data:
-            st.markdown("### 📊 Statistiques du Système")
-            col1, col2, col3, col4 = st.columns(4)
-            
-            with col1:
-                st.metric("Documents", health_data.get("corpus_size", 0))
-            with col2:
-                st.metric("Système", "Actif" if health_data.get("initialized") else "Inactif")
-            with col3:
-                st.metric("API", "En ligne")
-            with col4:
-                st.metric("Open Source", "100%")
+    elif ask_button:
+        st.warning("⚠️ Veuillez saisir une question")
+    
+    if clear_button:
+        st.rerun()
 
-if __name__ == "__main__":
-    main()
+# ============================================
+# PIED DE PAGE
+# ============================================
+
+st.divider()
+footer_html = """
+<div style="text-align: center; color: #666; padding: 1rem;">
+    <p>
+        🌾 AgriIA - Assistant Agriculture Burkinabè | 
+        💻 Optimisé CPU 8Go | 
+        🤖 OPT-350m
+    </p>
+    <p><small>Version 1.0.0 - 2025</small></p>
+</div>
+"""
+st.markdown(footer_html, unsafe_allow_html=True)
