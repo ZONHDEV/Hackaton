@@ -1,57 +1,43 @@
-# Hackaton
-projet agriIA
 
-
-# 🌱 Agri Assistant Burkina
-
-Assistant IA contextuel 100% open source pour l'agriculture burkinabè.
-
-## 🎯 Objectif
-
-Développer un système d'IA capable de répondre à des questions sur l'agriculture burkinabè en utilisant exclusivement des technologies open source.
-
-## 🏗️ Architecture Technique
-
-
-
-### Pipeline RAG
-
-1. **Question** → Encodage en embeddings
-2. **Recherche** → Similarité vectorielle avec FAISS
-3. **Contexte** → Extraction des documents pertinents
-4. **Génération** → Réponse contextuelle avec Mistral-7B
-5. **Réponse** → Retour avec sources citées
+1. **Question** → Saisie de l'utilisateur
+2. **Encodage** → Embeddings avec MiniLM multilingue
+3. **Recherche** → Similarité vectorielle avec FAISS
+4. **Contexte** → Extraction des documents pertinents
+5. **Génération** → Réponse contextuelle avec DialoGPT-medium
+6. **Réponse** → Retour avec sources citées
 
 ## 🛠️ Technologies Open Source Utilisées
 
 ### Composants Principaux
 
-| Composant | Technologie | Licence | Lien |
-|-----------|-------------|---------|------|
-| **Embeddings** | sentence-transformers | Apache 2.0 | [Lien](https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2) |
-| **Vector DB** | FAISS | MIT | [Lien](https://github.com/facebookresearch/faiss) |
-| **LLM** | Mistral-7B | Apache 2.0 | [Lien](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.1) |
-| **Backend** | FastAPI | MIT | [Lien](https://fastapi.tiangolo.com) |
-| **Frontend** | Streamlit | MIT | [Lien](https://streamlit.io) |
+| Composant | Technologie | Spécifications | Licence |
+|-----------|-------------|----------------|---------|
+| **Embeddings** | `paraphrase-multilingual-MiniLM-L12-v2` | 384 dimensions, multilingue, léger | Apache 2.0 |
+| **Vector DB** | **FAISS** (Facebook AI Similarity Search) | Index FlatIP, recherche rapide | MIT |
+| **LLM** | **DialoGPT-medium** | 345M paramètres, optimisé dialogue | MIT |
+| **Framework ML** | **PyTorch** + **Transformers** | Inférence CPU, gestion mémoire | BSD/Apache 2.0 |
+| **Embeddings** | **Sentence-Transformers** | Encodage par batch, normalisation | Apache 2.0 |
 
-### Bibliothèques Support
+### Caractéristiques Techniques
 
-- **Transformers** (Apache 2.0) - Modèles de langage
-- **PyTorch** (BSD) - Calcul tensoriel
-- **NumPy** (BSD) - Calcul scientifique
-- **Pandas** (BSD) - Manipulation de données
+- **🖥️ Compatible CPU** : Fonctionne sur machines 8GB RAM
+- **⚡ Optimisations mémoire** : 
+  - Encodage par batch (16-32 documents)
+  - Limitation contexte (400-600 caractères)
+  - Génération contrôlée (100-150 tokens)
+- **🌍 Multilingue** : Support français/langues locales
+- **💾 Local uniquement** : Aucune connexion internet requise
 
-## 🚀 Installation et Utilisation
+## 📊 Performance et Optimisations
 
-### Prérequis
+### Gestion Mémoire
+```python
+# Encodage optimisé
+embeddings = model.encode(texts, batch_size=16, normalize_embeddings=True)
 
-- Python 3.8+
-- 8GB RAM minimum
-- 2GB espace disque
-
-### Installation
-
-1. **Cloner le repository**
-```bash
-git clone https://github.com/votre-username/agri-assistant.git
-cd agri-assistant
+# Génération contrôlée
+outputs = model.generate(
+    max_new_tokens=100,
+    temperature=0.7,
+    do_sample=True
+)
