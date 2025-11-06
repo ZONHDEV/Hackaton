@@ -28,16 +28,3 @@
 - **🌍 Multilingue** : Support français/langues locales
 - **💾 Local uniquement** : Aucune connexion internet requise
 
-## 📊 Performance et Optimisations
-
-### Gestion Mémoire
-```python
-# Encodage optimisé
-embeddings = model.encode(texts, batch_size=16, normalize_embeddings=True)
-
-# Génération contrôlée
-outputs = model.generate(
-    max_new_tokens=100,
-    temperature=0.7,
-    do_sample=True
-)
